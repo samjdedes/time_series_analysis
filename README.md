@@ -7,7 +7,7 @@ ___
 - [Exploratory api functions](./notebooks/exploratory/get_data.ipynb)
 
 ### Example Images
-- [Bitcoin Historical Data](./figures/report/bitcoin_historical.png)
+ ![Bitcoin Historical Data](./figures/report/bitcoin_historical.png)
 
 # Introduction
 ___
