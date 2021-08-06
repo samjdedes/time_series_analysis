@@ -3,7 +3,7 @@
 # Table of Contents
 ___
 ### Notebooks
-- [Exploratory Data Analysis](./notebooks/exploratory/EDA .ipynb)
+- [Exploratory Data Analysis](./notebooks/exploratory/EDA.ipynb)
 - [Exploratory api functions](./notebooks/exploratory/get_data.ipynb)
 
 ### Example Images
