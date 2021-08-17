@@ -46,11 +46,8 @@ def fetch_range_data(symbol, start, end, path=None, combine=True):
     # print(f'Made Dir :{path}')
     try:
         mkdir(path)
-        print(f'Made Dir :{path}')
 
     except:
-        print(f"Didn't Make Dir :{path}")
-
         pass
 
    # get all available data between start and end dates
@@ -59,12 +56,10 @@ def fetch_range_data(symbol, start, end, path=None, combine=True):
     # if today, subtract 1 day to get only complete data
     if end == today:
         i_date = yesterday
-        print("YELP!!!")
 
     # else, set indexer to end
     else:
         i_date = end
-        print('WHELP!!!!!', i_date)
 
     # create placeholder for date range
     place_date = i_date
@@ -118,4 +113,4 @@ def fetch_range_data(symbol, start, end, path=None, combine=True):
         #sort and save
         df.sort_index()
 
-        return df.to_csv(f'../data/combined_coinbase_{end}.csv')
+        df.to_csv(f'../data/coinbase/daily_combined/combined_coinbase_{final}.csv')
