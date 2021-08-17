@@ -24,16 +24,47 @@ def fetch_range_data(symbol, start, end, path=None, combine=True):
 
     Params:
     symbol (string) - symbol pair desired ex. BTC/USD
-    start (string) - initial desired date in YYYY/MM/DD format
-    end (string) - final desired date in YYYY/MM/DD format
+    start (string) - initial desired date in YYYY-MM-DD format
+    end (string) - final desired date in YYYY-MM-DD format
     *kwargs
 
     Returns:
     .csv at default or specified path with requested data
     '''
+    # convert input strings to date objects
+    start = dt.datetime.strptime(start, '%Y/%m/%d').date()
+    end = dt.datetime.strptime(end, '%Y/%m/%d').date()
+
+    # define "final" to create folder name that does not change with repeated queries
+    final = end
+
+    if not path:
+        path = f'../data/coinbase/daily_raw/{end}'
+
+    # make folder for data or make exception
+    # mkdir(path)
+    # print(f'Made Dir :{path}')
+    try:
+        mkdir(path)
+        print(f'Made Dir :{path}')
+
+    except:
+        print(f"Didn't Make Dir :{path}")
+
+        pass
+
    # get all available data between start and end dates
     # instantiate indexer "i_date"
-    i_date = dt.date.today() - timedelta(days=1)
+
+    # if today, subtract 1 day to get only complete data
+    if end == today:
+        i_date = yesterday
+        print("YELP!!!")
+
+    # else, set indexer to end
+    else:
+        i_date = end
+        print('WHELP!!!!!', i_date)
 
     # create placeholder for date range
     place_date = i_date
@@ -51,7 +82,7 @@ def fetch_range_data(symbol, start, end, path=None, combine=True):
         end = str(place_date)
         start = str(i_date+timedelta(days=1))
 
-        fetch_daily_data(symbol, start, end)
+        fetch_daily_data(symbol, start, end, final = final)
 
         # set last date to date to continue loop
         place_date = i_date

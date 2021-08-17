@@ -3,18 +3,22 @@
 import pandas as pd
 import requests
 import json
+from os import mkdir
 
 
-def fetch_daily_data(symbol, start, end, path=None):
-    # make folder for data or make exception
+def fetch_daily_data(symbol, start, end, final, path=None):
+    # # make folder for data or make exception
     if not path:
-        path = f'../data/coinbase/daily_raw/{end}'
-
-    try:
-        mkdir(path)
-
-    except:
-        pass
+        path = f'../data/coinbase/daily_raw/{final}'
+    #
+    # try:
+    #     mkdir(path)
+    #     print(f'Made Dir :{path}')
+    #
+    # except:
+    #     print(f"Didn't Make Dir :{path}")
+    #
+    #     pass
 
     pair_split = symbol.split('/')  # symbol must be in format XXX/XXX ie. BTC/EUR
     symbol = pair_split[0] + '-' + pair_split[1]
