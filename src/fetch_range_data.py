@@ -19,9 +19,9 @@ yesterday = today - timedelta(days=1)
 
 final = dt.date.today() - timedelta(days=1)
 
-def fetch_range_data(symbol, start, end, path=None, combine=True, always_fetch=False):
+def fetch_range_data(symbol, start, end, always_fetch=False):
     '''
-    Gets data from api between specified dates and saves at given path
+    Gets data from api between specified dates and saves .csv at given path
 
     Params:
     symbol (string) - symbol pair desired ex. BTC/USD
@@ -29,54 +29,53 @@ def fetch_range_data(symbol, start, end, path=None, combine=True, always_fetch=F
     end (string) - final desired date in YYYY-MM-DD format
     *kwargs
 
+
     Returns:
-    .csv at default or specified path with requested data
+    df (pandas dataframe) -  dataframe of all data
     '''
 
-    # check type of input, convert to dt.date object
-    if type(start) == str:
+    # check type of input, convert to dt.date object if needed
+    if type(start) != dt.date:
 
-        #use method to convert from string to dt.date type
-        start = dt.datetime.strptime(start, '%Y/%m/%d').date()
+        if type(start) == str:
 
-    elif type(start) == dt.datetime:
+            #use method to convert from string to dt.date type
+            start = dt.datetime.strptime(start, '%Y/%m/%d')
 
-        #use method to convert from string to dt.date type
-        start = start.date()
+        try:
+            start = start.date()
 
-    else:
-        pass
+        except:
+            raise TypeError("Invalid type: provide string date or datetime object")
 
+    if type(end) != dt.date:
 
-    if type(end) == str:
+        # check type of input, convert to dt.date object
+        if type(end) == str:
 
-        #use method to convert from string to dt.date type
-        end = dt.datetime.strptime(end, '%Y/%m/%d').date()
+            #use method to convert from string to dt.date type
+            end = dt.datetime.strptime(end, '%Y/%m/%d')
 
-    elif type(end) == dt.datetime:
+        try:
+            end = end.date()
 
-        #use method to convert from string to dt.date type
-        end = end.date()
+        except:
+            raise TypeError("Invalid type: provide string date or datetime object")
 
-    else:
-        pass
-
-    # define "final" to create folder name that does not change with repeated queries
-    final = end
-    combined_file_path = f'../data/coinbase/daily_combined/combined_coinbase_{final}.csv'
+    # define  create folder name that does not change with repeated queries
+    # final = end
+    combined_file_path = f'../data/coinbase/daily_combined/combined_coinbase_{end}.csv'
 
     #if option to always query data, ignore
     # otherwise, return data from file and ignore code
-    if not always_fetch:
-        if exists(combined_file_path):
+    if not always_fetch and exists(combined_file_path):
 
-            df = pd.read_csv(combined_file_path)
-            print('File exists, returned as df')
-            return df
+        df = pd.read_csv(combined_file_path)
+        print('File exists, returned as df')
+        return df
 
-    # if path not specified, create path for folder name to contain raw data
-    if not path:
-        path = f'../data/coinbase/daily_raw/{end}'
+    # create path for folder name to contain raw data
+    path = f'../data/coinbase/daily_raw/{end}'
 
     # make folder for data or make exception
     try:
@@ -84,70 +83,68 @@ def fetch_range_data(symbol, start, end, path=None, combine=True, always_fetch=F
 
     except:
         warnings.warn(f"{path} already exists")
-        pass
 
    # get all available data between start and end dates
+
     # instantiate indexer "i_date"
+    # if today, subtract 1 day to get only complete data else, set indexer to end
+    i_date = yesterday if end == today else end
 
-    # if today, subtract 1 day to get only complete data
-    if end == today:
-        i_date = yesterday
-
-    # else, set indexer to end
-    else:
-        i_date = end
-
-    # create placeholder for date range
-    place_date = i_date
+    # # create placeholder for date range
+    # place_date = i_date
 
     #initial date searching for data on coinbase api
-    first_record = dt.date(2015,7,20)
+#     first_record = dt.date(2015,7,20)
+    first_record = start
+
+    # define "final" to store end date provided
+    final = end
 
     # wrap in while loop to prevent run away queries
     while i_date > first_record:
-
-        # coinbase limits requests to 300 entries, limit request to 300 days each
-        i_date = place_date - timedelta(days=300)
-
         #define start and end dates for query
-        end = str(place_date)
-        start = str(i_date+timedelta(days=1))
+        end = str(i_date)
+        # coinbase limits requests to 300 entries, limit request to 300 days each
+        i_date -= timedelta(days=300)
+        
+        a = first_record
+        b = i_date+timedelta(days=1)
+        
+        # respect first date constraint\
+        start = max(a, b) # todo- whay am I adding 1?
 
+        # fetch and save .csvs for each query
         fetch_daily_data(symbol, start, end, final = final)
 
-        # set last date to date to continue loop
-        place_date = i_date
+
+    # combine the data
+    cb_list = []
+    # update path
+    path = f'../data/coinbase/daily_raw/{final}'
+
+    for root, dirs, files in os.walk(path):
+        if root == path:
+            for name in files:
+                cb_list.append(os.path.join(root,name))
 
 
-    if combine:
-        cb_list = []
-        if not path:
-            path = f'../data/coinbase/daily_raw/{end}'
+    # add each response file to single DataFrame
+    df = pd.DataFrame()
+    for csv in cb_list:
+        df = df.append(pd.read_csv(csv), ignore_index=True)
 
-        for root, dirs, files in os.walk(path):
-            if root == path:
-                for name in files:
-                    cb_list.append(os.path.join(root,name))
+    # display warnings if duplicates detected
 
-
-        # add each response file to single DataFrame
-        df = pd.DataFrame()
-        for my_df in cb_list:
-            df = df.append(pd.read_csv(my_df), ignore_index=True)
+    if not df.drop_duplicates().equals(df):
+      warnings.warn('Duplicate entries detected.')
 
 
-        # display warnings if duplicates detected
+    # change index to datetime objects for use in timeseries modeling
+    df.set_index(pd.to_datetime(df['date']), drop=True, inplace=True)
+    df.pop('date')
 
-        if not df.drop_duplicates().equals(df):
-          warnings.warn('Duplicate entries detected.')
-
-
-        # change index to datetime objects for use in timeseries modeling
-        df.set_index(pd.to_datetime(df['date']), drop=True, inplace=True)
-        df.pop('date')
-
-        # save to combined filepath, defined at beginning of function
-        df.to_csv(combined_file_path)
+    # save to combined filepath, defined at beginning of function
+    df.to_csv(combined_file_path)
 
     # return final df
     return df
