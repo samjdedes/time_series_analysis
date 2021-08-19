@@ -9,6 +9,7 @@ import datetime as dt
 from datetime import timedelta
 import os
 from os import mkdir
+from os.path import exists
 import warnings
 
 from fetch_daily_data import fetch_daily_data
@@ -18,7 +19,7 @@ yesterday = today - timedelta(days=1)
 
 final = dt.date.today() - timedelta(days=1)
 
-def fetch_range_data(symbol, start, end, path=None, combine=True):
+def fetch_range_data(symbol, start, end, path=None, combine=True, always_fetch=False):
     '''
     Gets data from api between specified dates and saves at given path
 
@@ -31,32 +32,58 @@ def fetch_range_data(symbol, start, end, path=None, combine=True):
     Returns:
     .csv at default or specified path with requested data
     '''
-    # convert input strings to date objects
-    try:
+
+    # check type of input, convert to dt.date object
+    if type(start) == str:
+
+        #use method to convert from string to dt.date type
         start = dt.datetime.strptime(start, '%Y/%m/%d').date()
 
-    except:
+    elif type(start) == dt.datetime:
+
+        #use method to convert from string to dt.date type
+        start = start.date()
+
+    else:
         pass
 
-    try:
+
+    if type(end) == str:
+
+        #use method to convert from string to dt.date type
         end = dt.datetime.strptime(end, '%Y/%m/%d').date()
 
-    except:
+    elif type(end) == dt.datetime:
+
+        #use method to convert from string to dt.date type
+        end = end.date()
+
+    else:
         pass
 
     # define "final" to create folder name that does not change with repeated queries
     final = end
+    combined_file_path = f'../data/coinbase/daily_combined/combined_coinbase_{final}.csv'
 
+    #if option to always query data, ignore
+    # otherwise, return data from file and ignore code
+    if not always_fetch:
+        if exists(combined_file_path):
+
+            df = pd.read_csv(combined_file_path)
+            print('File exists, returned as df')
+            return df
+
+    # if path not specified, create path for folder name to contain raw data
     if not path:
         path = f'../data/coinbase/daily_raw/{end}'
 
     # make folder for data or make exception
-    # mkdir(path)
-    # print(f'Made Dir :{path}')
     try:
         mkdir(path)
 
     except:
+        warnings.warn(f"{path} already exists")
         pass
 
    # get all available data between start and end dates
@@ -119,7 +146,8 @@ def fetch_range_data(symbol, start, end, path=None, combine=True):
         df.set_index(pd.to_datetime(df['date']), drop=True, inplace=True)
         df.pop('date')
 
-        #sort and save
-        df.sort_index()
+        # save to combined filepath, defined at beginning of function
+        df.to_csv(combined_file_path)
 
-        df.to_csv(f'../data/coinbase/daily_combined/combined_coinbase_{final}.csv')
+    # return final df
+    return df
