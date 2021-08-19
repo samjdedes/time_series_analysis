@@ -32,8 +32,17 @@ def fetch_range_data(symbol, start, end, path=None, combine=True):
     .csv at default or specified path with requested data
     '''
     # convert input strings to date objects
-    start = dt.datetime.strptime(start, '%Y/%m/%d').date()
-    end = dt.datetime.strptime(end, '%Y/%m/%d').date()
+    try:
+        start = dt.datetime.strptime(start, '%Y/%m/%d').date()
+
+    except:
+        pass
+
+    try:
+        end = dt.datetime.strptime(end, '%Y/%m/%d').date()
+
+    except:
+        pass
 
     # define "final" to create folder name that does not change with repeated queries
     final = end
