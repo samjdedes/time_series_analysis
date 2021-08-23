@@ -91,7 +91,6 @@ def fetch_range_data(symbol, start, end, always_fetch=False):
     i_date = yesterday if end == today else end
 
     # # create placeholder for date range
-    # place_date = i_date
 
     #initial date searching for data on coinbase api
 #     first_record = dt.date(2015,7,20)
